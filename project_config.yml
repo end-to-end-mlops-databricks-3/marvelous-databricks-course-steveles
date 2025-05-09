@@ -1,0 +1,49 @@
+prd:
+  catalog_name: mlops_prd/steven
+  schema_name: gekentekende_voertuigen
+acc:
+  catalog_name: mlops_acc/steven
+  schema_name: gekentekende_voertuigen
+dev:
+  catalog_name: mlops_dev/steven
+  schema_name: gekentekende_voertuigen
+
+parameters:
+  learning_rate: 0.01
+  n_estimators: 1000
+  max_depth: 6
+
+
+num_features:
+  - LotFrontage
+  - LotArea
+  - OverallQual
+  - OverallCond
+  - YearBuilt
+  - YearRemodAdd
+  - MasVnrArea
+  - TotalBsmtSF
+  - GrLivArea
+  - GarageCars
+
+cat_features:
+  - MSZoning
+  - Street
+  - Alley
+  - LotShape
+  - LandContour
+  - Neighborhood
+  - Condition1
+  - BldgType
+  - HouseStyle
+  - RoofStyle
+  - Exterior1st
+  - Exterior2nd
+  - MasVnrType
+  - Foundation
+  - Heating
+  - CentralAir
+  - SaleType
+  - SaleCondition
+
+target: SalePrice
