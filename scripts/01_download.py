@@ -1,11 +1,10 @@
 from src.rdw.download_dataset import chunked_download, convert_illegal_column_characters
 from pyspark.sql import SparkSession
 
-spark = SparkSession.builder.getOrCreate()
+# spark = SparkSession.builder.getOrCreate()
 
-volume_path = f"/Volumes/mlops_dev/steven/rdw/data/gekentekende_voertuigen.csv"
-delta_path = f"mlops_dev.steven.rdw.data.gekentekende_voertuigen"
-
+volume_path = f"/Volumes/mlops_dev/steven/rdw/gekentekende_voertuigen.csv"
+delta_path = f"mlops_dev.steven.gekentekende_voertuigen"
 
 chunked_download(url="https://opendata.rdw.nl/api/views/m9d7-ebf2/rows.csv?accessType=DOWNLOAD", output_path=volume_path)
 
