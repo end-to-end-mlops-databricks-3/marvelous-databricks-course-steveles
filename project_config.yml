@@ -15,35 +15,32 @@ parameters:
 
 
 num_features:
-  - LotFrontage
-  - LotArea
-  - OverallQual
-  - OverallCond
-  - YearBuilt
-  - YearRemodAdd
-  - MasVnrArea
-  - TotalBsmtSF
-  - GrLivArea
-  - GarageCars
+  - aantal_zitplaatsen
+  - aantal_cilinders
+  - cilinderinhoud
+  - massa_ledig_voertuig
+  - massa_rijklaar
+  - catalogusprijs
+  - aantal_deuren
+  - aantal_wielen
+  - lengte
+  - breedte
+  - vermogen_massarijklaar
+  - wielbasis
+  - days_alive
+  - vermogen
+  - vervaldatum_apk
+  - datum_eerste_toelating
 
 cat_features:
-  - MSZoning
-  - Street
-  - Alley
-  - LotShape
-  - LandContour
-  - Neighborhood
-  - Condition1
-  - BldgType
-  - HouseStyle
-  - RoofStyle
-  - Exterior1st
-  - Exterior2nd
-  - MasVnrType
-  - Foundation
-  - Heating
-  - CentralAir
-  - SaleType
-  - SaleCondition
+  - kenteken
+  - voertuigsoort
+  - merk
+  - handelsbenaming
+  - inrichting
+  - eerste_kleur
+  - type
+  - tellerstandoordeel
+  - brandstoftype
 
-target: SalePrice
+target: is_dead
