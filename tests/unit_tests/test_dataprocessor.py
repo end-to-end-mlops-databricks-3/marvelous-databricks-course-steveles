@@ -6,8 +6,8 @@ from conftest import CATALOG_DIR
 from delta.tables import DeltaTable
 from pyspark.sql import SparkSession
 
-from house_price.config import ProjectConfig
-from house_price.data_processor import DataProcessor
+from rdw.config import ProjectConfig
+from rdw.data_processor import DataProcessor
 
 
 def test_data_ingestion(sample_data: pd.DataFrame) -> None:
