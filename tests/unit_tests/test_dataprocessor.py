@@ -70,8 +70,8 @@ def test_missing_value_handling(sample_data: pd.DataFrame, config: ProjectConfig
     processor.preprocess()
 
     assert processor.df["nettomaximumvermogen"].isna().sum() == 0
-    assert (processor.df["inrichting"] == "None").sum() > 0     
-    assert (processor.df["merk"] == 0).sum() > 0          
+    assert (processor.df["inrichting"] == "None").sum() > 0
+    assert (processor.df["merk"] == 0).sum() > 0
 
 
 def test_column_selection(sample_data: pd.DataFrame, config: ProjectConfig, spark_session: SparkSession) -> None:

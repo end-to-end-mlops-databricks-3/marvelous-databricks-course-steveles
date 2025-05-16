@@ -1,12 +1,12 @@
 prd:
-  catalog_name: mlops_prd/steven
-  schema_name: gekentekende_voertuigen
+  catalog_name: mlops_prd
+  schema_name: steven
 acc:
-  catalog_name: mlops_acc/steven
-  schema_name: gekentekende_voertuigen
+  catalog_name: mlops_acc
+  schema_name: steven
 dev:
-  catalog_name: mlops_dev/steven
-  schema_name: gekentekende_voertuigen
+  catalog_name: mlops_dev
+  schema_name: steven
 
 parameters:
   learning_rate: 0.01
@@ -28,7 +28,7 @@ num_features:
   - vermogen_massarijklaar
   - wielbasis
   - days_alive
-  - vermogen
+  - nettomaximumvermogen
   - vervaldatum_apk
   - datum_eerste_toelating
 
@@ -41,6 +41,6 @@ cat_features:
   - eerste_kleur
   - type
   - tellerstandoordeel
-  - brandstoftype
+  - brandstof_omschrijving
 
 target: is_dead

@@ -1,7 +1,5 @@
 """Data preprocessing module."""
 
-import datetime
-
 import pandas as pd
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import current_timestamp, to_utc_timestamp
@@ -36,7 +34,7 @@ class DataProcessor:
         # Fill missing numeric values with median
         for col in num_features:
             median_val = self.df[col].median()
-            self.df[col].fillna(median_val, inplace=True)
+            self.df[col] = self.df[col].fillna(median_val)
 
         # Fill categorical NaNs with placeholder
         cat_features = self.config.cat_features

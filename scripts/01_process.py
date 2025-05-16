@@ -1,15 +1,15 @@
-import argparse
+"""Script for preprocessing the RDW dataset."""
 
 import yaml
 from loguru import logger
+from marvelous.logging import setup_logging
+from marvelous.timer import Timer
 from pyspark.sql import SparkSession
 
 from rdw.config import ProjectConfig
 from rdw.data_processor import DataProcessor
-from marvelous.logging import setup_logging
-from marvelous.timer import Timer
 
-config_path = f"./project_config.yml"
+config_path = "./project_config.yml"  # ../project_config.yml when running directly on DB
 
 config = ProjectConfig.from_yaml(config_path=config_path, env="dev")
 
