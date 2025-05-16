@@ -12,7 +12,7 @@ catalog_name, schema_name → Database schema names for Databricks tables.
 import mlflow
 import numpy as np
 import pandas as pd
-from lightgbm import LGBMRegressor
+from lightgbm import LGBMRegressor, LGBMClassifier
 from loguru import logger
 from mlflow import MlflowClient
 from mlflow.data.dataset_source import DatasetSource
@@ -27,7 +27,7 @@ from rdw.config import ProjectConfig, Tags
 
 
 class BasicModel:
-    """A basic model class for house price prediction using LightGBM.
+    """A basic model class for rdw prediction using LightGBM.
 
     This class handles data loading, feature preparation, model training, and MLflow logging.
     """
@@ -50,7 +50,7 @@ class BasicModel:
         self.catalog_name = self.config.catalog_name
         self.schema_name = self.config.schema_name
         self.experiment_name = self.config.experiment_name_basic
-        self.model_name = f"{self.catalog_name}.{self.schema_name}.house_prices_model_basic"
+        self.model_name = f"{self.catalog_name}.{self.schema_name}.rdw_model_basic"
         self.tags = tags.dict()
 
     def load_data(self) -> None:
@@ -81,8 +81,9 @@ class BasicModel:
             transformers=[("cat", OneHotEncoder(handle_unknown="ignore"), self.cat_features)], remainder="passthrough"
         )
 
+        ##### TODO -> LGBM CLASSIFIER? 
         self.pipeline = Pipeline(
-            steps=[("preprocessor", self.preprocessor), ("regressor", LGBMRegressor(**self.parameters))]
+            steps=[("preprocessor", self.preprocessor), ("classifier", LGBMClassifier(**self.parameters))]
         )
         logger.info("✅ Preprocessing pipeline defined.")
 
