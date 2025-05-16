@@ -1,5 +1,5 @@
 """Script for training and registering MLFlow model """
-
+# Databricks notebook source
 import argparse
 
 import mlflow
@@ -10,10 +10,21 @@ from pyspark.sql import SparkSession
 from rdw.config import ProjectConfig, Tags
 from rdw.models.basic_model import BasicModel
 
+from marvelous.common import is_databricks
+from dotenv import load_dotenv
+import os
+# COMMAND ----------
 # Configure tracking uri
-mlflow.set_tracking_uri("databricks")
-mlflow.set_registry_uri("databricks-uc")
+if not is_databricks():
+    load_dotenv()
+    profile = os.environ["PROFILE"]
+    mlflow.set_tracking_uri(f"databricks://{profile}")
+    mlflow.set_registry_uri(f"databricks-uc://{profile}")
+else:
+    mlflow.set_tracking_uri("databricks")
+    mlflow.set_registry_uri("databricks-uc")
 
+# COMMAND ----------
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "--root_path",
@@ -58,7 +69,10 @@ parser.add_argument(
 
 args = parser.parse_args()
 root_path = args.root_path
-config_path = f"{root_path}/files/project_config.yml"
+config_path = f"{root_path}./project_config.yml"
+# COMMAND ----------
+
+# config_path = f"./project_config.yml"
 
 config = ProjectConfig.from_yaml(config_path=config_path, env=args.env)
 spark = SparkSession.builder.getOrCreate()
@@ -68,7 +82,7 @@ tags = Tags(**tags_dict)
 
 # Initialize model
 model = BasicModel(
-    config=config, tags=tags, spark=spark, code_paths=["../dist/house_price-1.0.1-py3-none-any.whl"]
+    config=config, tags=tags, spark=spark
 )
 logger.info("Model initialized.")
 
@@ -84,3 +98,4 @@ logger.info("Model training completed.")
 
 model.register_model()
 logger.info("Registered model")
+# COMMAND ----------

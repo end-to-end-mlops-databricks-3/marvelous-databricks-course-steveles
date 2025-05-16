@@ -12,7 +12,7 @@ catalog_name, schema_name → Database schema names for Databricks tables.
 import mlflow
 import numpy as np
 import pandas as pd
-from lightgbm import LGBMRegressor, LGBMClassifier
+from lightgbm import LGBMClassifier
 from loguru import logger
 from mlflow import MlflowClient
 from mlflow.data.dataset_source import DatasetSource
