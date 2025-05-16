@@ -23,7 +23,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 
-from house_price.config import ProjectConfig, Tags
+from rdw.config import ProjectConfig, Tags
 
 
 class BasicModel:
