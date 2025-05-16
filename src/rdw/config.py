@@ -20,6 +20,7 @@ class ProjectConfig(BaseModel):
     schema_name: str
     parameters: dict[str, Any]
     experiment_name_basic: str = "/Users/steven@vergence.ai/mlflow_experiments/exp1"
+    experiment_name_custom: str = "/Users/steven@vergence.ai/mlflow_experiments/custom_exp1"
 
 
     @classmethod

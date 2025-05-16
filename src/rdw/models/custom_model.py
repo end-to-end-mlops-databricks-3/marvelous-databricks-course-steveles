@@ -14,7 +14,7 @@ from typing import Literal
 import mlflow
 import numpy as np
 import pandas as pd
-from lightgbm import LGBMClassifier
+from xgboost import XGBClassifier
 from loguru import logger
 from mlflow import MlflowClient
 from mlflow.data.dataset_source import DatasetSource
@@ -27,14 +27,14 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 
 from rdw.config import ProjectConfig, Tags
-from rdw.utils import adjust_predictions
+from rdw.utils import adjust_predictions, c_statistic_harrell
 from rdw.__init__ import __version__
 
 
 class RDWModelWrapper(mlflow.pyfunc.PythonModel):
     """Wrapper class for machine learning models to be used with MLflow.
 
-    This class wraps a machine learning model for predicting house prices.
+    This class wraps a machine learning model for predicting survival.
     """
 
     def __init__(self, model: object) -> None:
@@ -45,7 +45,7 @@ class RDWModelWrapper(mlflow.pyfunc.PythonModel):
         self.model = model
 
     def predict(
-        self, context: mlflow.pyfunc.PythonModelContext, model_input: pd.DataFrame | np.ndarray
+        self, model_input: pd.DataFrame | np.ndarray
     ) -> dict[str, float]:
         """Make predictions using the wrapped model.
 
@@ -63,7 +63,7 @@ class RDWModelWrapper(mlflow.pyfunc.PythonModel):
 
 
 class CustomModel:
-    """Custom model class for house price prediction.
+    """Custom model class for survival prediction.
 
     This class encapsulates the entire workflow of loading data, preparing features,
     training the model, and making predictions.
@@ -120,7 +120,7 @@ class CustomModel:
         )
 
         self.pipeline = Pipeline(
-            steps=[("preprocessor", self.preprocessor), ("classifier", LGBMClassifier(**self.parameters))]
+            steps=[("preprocessor", self.preprocessor), ("classifier", XGBClassifier(**self.parameters))] # Changed from LGBM
         )
         logger.info("✅ Preprocessing pipeline defined.")
 
@@ -136,7 +136,7 @@ class CustomModel:
         """
         mlflow.set_experiment(self.experiment_name)
         additional_pip_deps = ["pyspark==3.5.0"]
-        for package in self.code_paths:
+        for package in self.code_paths: # e.g., ["../dist/house_price-1.0.1-py3-none-any.whl"]
             whl_name = package.split("/")[-1]
             additional_pip_deps.append(f"./code/{whl_name}")
 
@@ -148,17 +148,20 @@ class CustomModel:
             mse = mean_squared_error(self.y_test, y_pred)
             mae = mean_absolute_error(self.y_test, y_pred)
             r2 = r2_score(self.y_test, y_pred)
+            c_stat = c_statistic_harrell(y_pred, self.y_test) # added
 
             logger.info(f"📊 Mean Squared Error: {mse}")
             logger.info(f"📊 Mean Absolute Error: {mae}")
             logger.info(f"📊 R2 Score: {r2}")
+            logger.info(f"📊 Harrell's C-Statistic: {c_stat}") # added
 
             # Log parameters and metrics
-            mlflow.log_param("model_type", "LightGBM with preprocessing")
+            mlflow.log_param("model_type", "XGBoost with preprocessing")
             mlflow.log_params(self.parameters)
             mlflow.log_metric("mse", mse)
             mlflow.log_metric("mae", mae)
             mlflow.log_metric("r2_score", r2)
+            mlflow.log_metric("c_statistic_harrell", c_stat) # added
 
             # Log the model
             signature = infer_signature(model_input=self.X_train, model_output=self.pipeline.predict(self.X_train))
@@ -182,7 +185,7 @@ class CustomModel:
 
             mlflow.pyfunc.log_model(
                 python_model=RDWModelWrapper(self.pipeline),
-                artifact_path="pyfunc-house-price-model",
+                artifact_path="pyfunc-rdw-surival-model",
                 code_paths=self.code_paths,
                 conda_env=conda_env,
                 signature=signature,
@@ -196,8 +199,8 @@ class CustomModel:
         """
         logger.info("🔄 Registering the model in UC...")
         registered_model = mlflow.register_model(
-            model_uri=f"runs:/{self.run_id}/pyfunc-house-price-model",
-            name=f"{self.catalog_name}.{self.schema_name}.house_prices_model_custom",
+            model_uri=f"runs:/{self.run_id}/pyfunc-rdw-surival-model",
+            name=f"{self.catalog_name}.{self.schema_name}.rdw_survival_model_custom",
             tags=self.tags,
         )
         logger.info(f"✅ Model registered as version {registered_model.version}.")
@@ -206,7 +209,7 @@ class CustomModel:
 
         client = MlflowClient()
         client.set_registered_model_alias(
-            name=f"{self.catalog_name}.{self.schema_name}.house_prices_model_custom",
+            name=f"{self.catalog_name}.{self.schema_name}.rdw_survival_model_custom",
             alias="latest-model",
             version=latest_version,
         )
@@ -250,7 +253,7 @@ class CustomModel:
         """
         logger.info("🔄 Loading model from MLflow alias 'production'...")
 
-        model_uri = f"models:/{self.catalog_name}.{self.schema_name}.house_prices_model_custom@latest-model"
+        model_uri = f"models:/{self.catalog_name}.{self.schema_name}.rdw_survival_model_custom@latest-model"
         model = mlflow.pyfunc.load_model(model_uri)
 
         logger.info("✅ Model successfully loaded.")

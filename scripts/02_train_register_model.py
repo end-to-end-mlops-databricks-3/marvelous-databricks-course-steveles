@@ -8,7 +8,10 @@ from pyspark.dbutils import DBUtils
 from pyspark.sql import SparkSession
 
 from rdw.config import ProjectConfig, Tags
-from rdw.models.basic_model import BasicModel
+
+# Choose one of both below.
+# from rdw.models.basic_model import BasicModel
+from rdw.models.custom_model import CustomModel 
 
 from marvelous.common import is_databricks
 from dotenv import load_dotenv
@@ -23,6 +26,19 @@ if not is_databricks():
 else:
     mlflow.set_tracking_uri("databricks")
     mlflow.set_registry_uri("databricks-uc")
+
+# COMMAND ----------
+
+### Arg workaround
+import sys
+sys.argv = [
+    'ipykernel_launcher.py', 
+    '--root_path', '.',
+    '--env', 'dev',
+    '--git_sha', 'abc123',
+    '--job_run_id', 'job-001',
+    '--branch', 'feature/mlflow_model'
+]
 
 # COMMAND ----------
 parser = argparse.ArgumentParser()
@@ -81,8 +97,8 @@ tags_dict = {"git_sha": args.git_sha, "branch": args.branch, "job_run_id": args.
 tags = Tags(**tags_dict)
 
 # Initialize model
-model = BasicModel(
-    config=config, tags=tags, spark=spark
+model = CustomModel(
+    config=config, tags=tags, spark=spark, code_paths=[] # ["../dist/house_price-1.0.1-py3-none-any.whl"]
 )
 logger.info("Model initialized.")
 
