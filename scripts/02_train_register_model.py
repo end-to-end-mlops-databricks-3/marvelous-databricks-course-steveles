@@ -110,6 +110,7 @@ logger.info("Loaded data, prepared features.")
 # Train + log the model (runs everything including MLflow logging)
 model.train()
 model.log_model()
+
 logger.info("Model training completed.")
 
 model.register_model()

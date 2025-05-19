@@ -27,7 +27,7 @@ num_features:
   - breedte
   - vermogen_massarijklaar
   - wielbasis
-  - days_alive
+  - days_alive 
   - nettomaximumvermogen
   - vervaldatum_apk
   - datum_eerste_toelating

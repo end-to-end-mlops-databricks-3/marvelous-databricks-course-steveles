@@ -22,9 +22,10 @@ from mlflow.models import infer_signature
 from mlflow.utils.environment import _mlflow_conda_env
 from pyspark.sql import SparkSession
 from sklearn.compose import ColumnTransformer
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, log_loss
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
+from sksurv.metrics import concordance_index_censored
 
 from rdw.config import ProjectConfig, Tags
 from rdw.utils import adjust_predictions, c_statistic_harrell
@@ -44,9 +45,7 @@ class RDWModelWrapper(mlflow.pyfunc.PythonModel):
         """
         self.model = model
 
-    def predict(
-        self, model_input: pd.DataFrame | np.ndarray
-    ) -> dict[str, float]:
+    def predict(self, model_input: pd.DataFrame | np.ndarray) -> dict[str, float]:
         """Make predictions using the wrapped model.
 
         :param context: The MLflow context (unused in this implementation).
@@ -69,7 +68,13 @@ class CustomModel:
     training the model, and making predictions.
     """
 
-    def __init__(self, config: ProjectConfig, tags: Tags, spark: SparkSession, code_paths: list[str]) -> None:
+    def __init__(
+        self,
+        config: ProjectConfig,
+        tags: Tags,
+        spark: SparkSession,
+        code_paths: list[str],
+    ) -> None:
         """Initialize the CustomModel.
 
         :param config: Configuration object containing model settings.
@@ -97,9 +102,13 @@ class CustomModel:
         This method loads data from Databricks tables and splits it into features and target variables.
         """
         logger.info("🔄 Loading data from Databricks tables...")
-        self.train_set_spark = self.spark.table(f"{self.catalog_name}.{self.schema_name}.train_set")
+        self.train_set_spark = self.spark.table(
+            f"{self.catalog_name}.{self.schema_name}.train_set"
+        )
         self.train_set = self.train_set_spark.toPandas()
-        self.test_set = self.spark.table(f"{self.catalog_name}.{self.schema_name}.test_set").toPandas()
+        self.test_set = self.spark.table(
+            f"{self.catalog_name}.{self.schema_name}.test_set"
+        ).toPandas()
         self.data_version = "0"  # describe history -> retrieve
 
         self.X_train = self.train_set[self.num_features + self.cat_features]
@@ -116,44 +125,71 @@ class CustomModel:
         """
         logger.info("🔄 Defining preprocessing pipeline...")
         self.preprocessor = ColumnTransformer(
-            transformers=[("cat", OneHotEncoder(handle_unknown="ignore"), self.cat_features)], remainder="passthrough"
+            transformers=[
+                ("cat", OneHotEncoder(handle_unknown="ignore"), self.cat_features)
+            ],
+            remainder="passthrough",
         )
 
         self.pipeline = Pipeline(
-            steps=[("preprocessor", self.preprocessor), ("classifier", XGBClassifier(**self.parameters))] # Changed from LGBM
+            steps=[
+                ("preprocessor", self.preprocessor),
+                (
+                    "classifier",
+                    XGBClassifier(
+                        objective="binary:logistic",
+                        eval_metric="logloss",
+                        **self.parameters,
+                    ),
+                ),
+            ]  # Changed from LGBM
         )
         logger.info("✅ Preprocessing pipeline defined.")
 
     def train(self) -> None:
         """Train the model using the prepared pipeline."""
         logger.info("🚀 Starting training...")
-        self.pipeline.fit(self.X_train, self.y_train)
+        self.pipeline.fit(self.X_train.drop(columns=["days_alive"]), self.y_train)
 
-    def log_model(self, dataset_type: Literal["PandasDataset", "SparkDataset"] = "SparkDataset") -> None:
+    def log_model(
+        self, dataset_type: Literal["PandasDataset", "SparkDataset"] = "SparkDataset"
+    ) -> None:
         """Log the trained model and its metrics to MLflow.
 
         This method evaluates the model, logs parameters and metrics, and saves the model in MLflow.
         """
         mlflow.set_experiment(self.experiment_name)
         additional_pip_deps = ["pyspark==3.5.0"]
-        for package in self.code_paths: # e.g., ["../dist/house_price-1.0.1-py3-none-any.whl"]
+        for (
+            package
+        ) in self.code_paths:  # e.g., ["../dist/house_price-1.0.1-py3-none-any.whl"]
             whl_name = package.split("/")[-1]
             additional_pip_deps.append(f"./code/{whl_name}")
 
         with mlflow.start_run(tags=self.tags) as run:
             self.run_id = run.info.run_id
-            y_pred = self.pipeline.predict(self.X_test)
+            
+            # Preds for C-index computation
+            y_proba = self.pipeline.predict_proba(self.X_test.drop(columns=["days_alive"]))[:, 1]
+            event_indicator = self.y_test.astype(bool)
+            event_time = self.X_test["days_alive"]
+            risk_scores = y_proba  # probability of death = risk
+            
+            # Preds
+            y_pred = self.pipeline.predict(self.X_test.drop(columns=["days_alive"]))
 
             # Evaluate metrics
             mse = mean_squared_error(self.y_test, y_pred)
             mae = mean_absolute_error(self.y_test, y_pred)
             r2 = r2_score(self.y_test, y_pred)
-            c_stat = c_statistic_harrell(y_pred, self.y_test) # added
+            ll = log_loss(self.y_test, y_pred) # added
+            c_index = concordance_index_censored(event_indicator, event_time, risk_scores)[0]
 
             logger.info(f"📊 Mean Squared Error: {mse}")
             logger.info(f"📊 Mean Absolute Error: {mae}")
             logger.info(f"📊 R2 Score: {r2}")
-            logger.info(f"📊 Harrell's C-Statistic: {c_stat}") # added
+            logger.info(f"📊 Log loss: {ll}")
+            logger.info(f"📊 Harrell's C-Statistic: {c_index}")
 
             # Log parameters and metrics
             mlflow.log_param("model_type", "XGBoost with preprocessing")
@@ -161,10 +197,15 @@ class CustomModel:
             mlflow.log_metric("mse", mse)
             mlflow.log_metric("mae", mae)
             mlflow.log_metric("r2_score", r2)
-            mlflow.log_metric("c_statistic_harrell", c_stat) # added
+            mlflow.log_metric("log_loss", ll)
+            mlflow.log_metric("harrell_c_stat", c_index)
+            
 
             # Log the model
-            signature = infer_signature(model_input=self.X_train, model_output=self.pipeline.predict(self.X_train))
+            signature = infer_signature(
+                model_input=self.X_train,
+                model_output=self.pipeline.predict(self.X_train),
+            )
             if dataset_type == "PandasDataset":
                 dataset = mlflow.data.from_pandas(
                     self.train_set,
