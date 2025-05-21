@@ -19,7 +19,7 @@ dependencies = ["mlflow==2.17.0",
                 "pydantic_settings==2.9.1",
                 "loguru==0.7.3",
                 "marvelous@git+https://github.com/end-to-end-mlops-databricks-3/marvelous@0.1.0"
-                ]
+]
 
 dynamic = ['version']
 
@@ -28,14 +28,17 @@ dev = ["databricks-connect==15.4.5",
        "ipykernel>=6.29.5, <7",
        "pip>=24.2",
        "pre-commit>=4.1.0, <5",
-       "pytest>=8.3.4, <9",             # Added by MA
-       "marvelous@git+https://github.com/end-to-end-mlops-databricks-3/marvelous@0.1.0"
+       "pytest>=8.3.4, <9",
+       "pytest>=8.3.4, <9",
     ]
+
 test = [
+    "pre-commit>=4.1.0, <5",
     "delta-spark==3.3.0",
-    "pyspark==3.5.3",
+    "pyspark==3.5.5",
     "pytest>=8.3.5",
-    "marvelous@git+https://github.com/end-to-end-mlops-databricks-3/marvelous@0.1.0"
+    "pytest-cov >=6.1.0",
+    "pydantic-settings>=2.8.1"
 ]
 
 [build-system]
@@ -44,7 +47,8 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where =["src"]
-include = ["mlops_course*"]
+include = ["house_price*"]
+
 
 [tool.setuptools.dynamic]
 version = { file = "version.txt" }
@@ -77,6 +81,9 @@ lint.ignore = [
     "D213", # multi-line-summary-second-line
     "E501", # line-too-long
     "C901", # too complex
+    "ERA001", # commented out code
+    "D100", # missing docstring
+    "ERA001" # commented out code
 ]
 
 [tool.ruff.format]
