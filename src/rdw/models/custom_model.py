@@ -149,7 +149,7 @@ class CustomModel:
     def train(self) -> None:
         """Train the model using the prepared pipeline."""
         logger.info("🚀 Starting training...")
-        self.pipeline.fit(self.X_train.drop(columns=["days_alive"]), self.y_train)
+        self.pipeline.fit(self.X_train.drop(columns=["days_alive"]), self.y_train) # we drop this col since it will contaminate the model.
 
     def log_model(
         self, dataset_type: Literal["PandasDataset", "SparkDataset"] = "SparkDataset"
