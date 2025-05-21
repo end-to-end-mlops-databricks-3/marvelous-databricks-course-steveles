@@ -60,7 +60,7 @@ def test_missing_value_handling(sample_data: pd.DataFrame, config: ProjectConfig
     """Test missing value handling in the DataProcessor.
 
     This function verifies that missing values are handled correctly for
-    nettomaximumvermogen, inrichting, and merk columns.
+    nettomaximumvermogen, inrichting, and merk columns
 
     :param sample_data: Input DataFrame containing sample data
     :param config: Configuration object for the project
