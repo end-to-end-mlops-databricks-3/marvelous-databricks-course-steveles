@@ -22,7 +22,6 @@ class ProjectConfig(BaseModel):
     experiment_name_basic: str = "/Users/steven@vergence.ai/mlflow_experiments/exp1"
     experiment_name_custom: str = "/Users/steven@vergence.ai/mlflow_experiments/custom_exp1"
 
-
     @classmethod
     def from_yaml(cls, config_path: str, env: str = "dev") -> "ProjectConfig":
         """Load and parse configuration settings from a YAML file.

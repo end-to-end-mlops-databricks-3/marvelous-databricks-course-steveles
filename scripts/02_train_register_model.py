@@ -1,9 +1,13 @@
-"""Script for training and registering MLFlow model """
+"""Script for training and registering MLFlow model."""
+
 # Databricks notebook source
 import argparse
+import os
 
 import mlflow
+from dotenv import load_dotenv
 from loguru import logger
+from marvelous.common import is_databricks
 from pyspark.dbutils import DBUtils
 from pyspark.sql import SparkSession
 
@@ -11,11 +15,8 @@ from rdw.config import ProjectConfig, Tags
 
 # Choose one of both below.
 # from rdw.models.basic_model import BasicModel
-from rdw.models.custom_model import CustomModel 
+from rdw.models.custom_model import CustomModel
 
-from marvelous.common import is_databricks
-from dotenv import load_dotenv
-import os
 # COMMAND ----------
 # Configure tracking uri
 if not is_databricks():
@@ -31,13 +32,19 @@ else:
 
 ### Arg workaround
 import sys
+
 sys.argv = [
-    'ipykernel_launcher.py', 
-    '--root_path', '.',
-    '--env', 'dev',
-    '--git_sha', 'abc123',
-    '--job_run_id', 'job-001',
-    '--branch', 'feature/mlflow_model'
+    "ipykernel_launcher.py",
+    "--root_path",
+    ".",
+    "--env",
+    "dev",
+    "--git_sha",
+    "abc123",
+    "--job_run_id",
+    "job-001",
+    "--branch",
+    "feature/mlflow_model",
 ]
 
 # COMMAND ----------
@@ -98,7 +105,10 @@ tags = Tags(**tags_dict)
 
 # Initialize model
 model = CustomModel(
-    config=config, tags=tags, spark=spark, code_paths=[] # ["../dist/house_price-1.0.1-py3-none-any.whl"]
+    config=config,
+    tags=tags,
+    spark=spark,
+    code_paths=[],  # ["../dist/house_price-1.0.1-py3-none-any.whl"]
 )
 logger.info("Model initialized.")
 
