@@ -1,0 +1,60 @@
+{
+  "dataframe_split": {
+    "columns": [
+      "aantal_zitplaatsen",
+      "aantal_cilinders",
+      "cilinderinhoud",
+      "massa_ledig_voertuig",
+      "massa_rijklaar",
+      "catalogusprijs",
+      "aantal_deuren",
+      "aantal_wielen",
+      "lengte",
+      "breedte",
+      "vermogen_massarijklaar",
+      "wielbasis",
+      "days_alive",
+      "nettomaximumvermogen",
+      "vervaldatum_apk",
+      "datum_eerste_toelating",
+      "kenteken",
+      "voertuigsoort",
+      "merk",
+      "handelsbenaming",
+      "inrichting",
+      "eerste_kleur",
+      "type",
+      "tellerstandoordeel",
+      "brandstof_omschrijving"
+    ],
+    "data": [
+      [
+        5.0,
+        4.0,
+        1984.0,
+        1303,
+        1403.0,
+        30878.0,
+        4.0,
+        4,
+        406.0,
+        176.0,
+        0.1,
+        257.0,
+        6375,
+        147.0,
+        1753315200000000000,
+        1202515200000000000,
+        "89ZDHF",
+        "Personenauto",
+        "VOLKSWAGEN",
+        "GOLF",
+        "stationwagen",
+        "ZWART",
+        "Unknown",
+        "Logisch",
+        "Benzine"
+      ]
+    ]
+  }
+}
