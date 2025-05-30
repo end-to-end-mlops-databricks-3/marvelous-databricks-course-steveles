@@ -116,7 +116,7 @@ class CustomModel:
         """Prepare features for model training.
 
         This method sets up a preprocessing pipeline including one-hot encoding for categorical
-        features and LightGBM classification model.
+        features and XGB classification model.
         """
         logger.info("🔄 Defining preprocessing pipeline...")
         self.preprocessor = ColumnTransformer(
@@ -290,7 +290,13 @@ class CustomModel:
         logger.info("✅ Model successfully loaded.")
 
         # Make predictions: None is context
-        predictions = model.predict(input_data)
+        print("INPUT DATA SHAPE =",input_data.shape)
+        print("INPUT DATA =", print(input_data.columns))
+        print("MODEL SCHEMA =",model.metadata.get_input_schema())  # or model.input_schema
+
+        # predictions = model.predict(input_data)
+        predictions = model.unwrap_python_model().predict(input_data)
+
 
         # Return predictions as a DataFrame
         return predictions
