@@ -3,13 +3,13 @@
 import mlflow
 import pandas as pd
 from conftest import CATALOG_DIR, TRACKING_URI
-from xgboost import XGBClassifier
 from loguru import logger
 from mlflow.entities.model_registry.registered_model import RegisteredModel
 from mlflow.tracking import MlflowClient
 from pyspark.sql import SparkSession
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
+from xgboost import XGBClassifier
 
 from rdw.config import ProjectConfig, Tags
 from rdw.models.custom_model import CustomModel
@@ -99,7 +99,7 @@ def test_train(mock_custom_model: CustomModel) -> None:
     mock_custom_model.prepare_features()
     mock_custom_model.train()
     expected_feature_names = mock_custom_model.config.num_features + mock_custom_model.config.cat_features
-    expected_feature_names.remove("days_alive") # since the column is dropped in the training function. 
+    expected_feature_names.remove("days_alive")  # since the column is dropped in the training function.
 
     assert mock_custom_model.pipeline.n_features_in_ == len(expected_feature_names)
     assert sorted(expected_feature_names) == sorted(mock_custom_model.pipeline.feature_names_in_)
@@ -117,7 +117,7 @@ def test_log_model_with_PandasDataset(mock_custom_model: CustomModel) -> None:
     mock_custom_model.prepare_features()
     mock_custom_model.train()
     expected_feature_names = mock_custom_model.config.num_features + mock_custom_model.config.cat_features
-    expected_feature_names.remove("days_alive") # since the column is dropped in the training function. 
+    expected_feature_names.remove("days_alive")  # since the column is dropped in the training function.
 
     assert mock_custom_model.pipeline.n_features_in_ == len(expected_feature_names)
     assert sorted(expected_feature_names) == sorted(mock_custom_model.pipeline.feature_names_in_)
