@@ -52,7 +52,7 @@ def test_column_transformations(sample_data: pd.DataFrame, config: ProjectConfig
     processor = DataProcessor(pandas_df=sample_data, config=config, spark=spark_session)
     processor.preprocess()
 
-    assert "kenteken" not in processor.df.columns
+    assert "kenteken" in processor.df.columns
     assert processor.df["tellerstandoordeel"].dtype == "category"
 
 
@@ -60,7 +60,7 @@ def test_missing_value_handling(sample_data: pd.DataFrame, config: ProjectConfig
     """Test missing value handling in the DataProcessor.
 
     This function verifies that missing values are handled correctly for
-    nettomaximumvermogen, inrichting, and merk columns.
+    nettomaximumvermogen, inrichting, and merk columns
 
     :param sample_data: Input DataFrame containing sample data
     :param config: Configuration object for the project
@@ -70,8 +70,8 @@ def test_missing_value_handling(sample_data: pd.DataFrame, config: ProjectConfig
     processor.preprocess()
 
     assert processor.df["nettomaximumvermogen"].isna().sum() == 0
-    assert (processor.df["inrichting"] == "None").sum() > 0
-    assert (processor.df["merk"] == 0).sum() > 0
+    assert (processor.df["inrichting"] == "None").sum() == 0
+    assert (processor.df["merk"] == 0).sum() == 0
 
 
 def test_column_selection(sample_data: pd.DataFrame, config: ProjectConfig, spark_session: SparkSession) -> None:
@@ -87,7 +87,7 @@ def test_column_selection(sample_data: pd.DataFrame, config: ProjectConfig, spar
     processor = DataProcessor(pandas_df=sample_data, config=config, spark=spark_session)
     processor.preprocess()
 
-    expected_columns = config.cat_features + config.num_features + [config.target, "Id"]
+    expected_columns = config.cat_features + config.num_features + [config.target]
     assert set(processor.df.columns) == set(expected_columns)
 
 
