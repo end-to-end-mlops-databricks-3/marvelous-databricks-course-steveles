@@ -81,7 +81,7 @@ class BasicModel:
             transformers=[("cat", OneHotEncoder(handle_unknown="ignore"), self.cat_features)], remainder="passthrough"
         )
 
-        ##### TODO -> LGBM CLASSIFIER? 
+        ##### TODO -> LGBM CLASSIFIER?
         self.pipeline = Pipeline(
             steps=[("preprocessor", self.preprocessor), ("classifier", LGBMClassifier(**self.parameters))]
         )

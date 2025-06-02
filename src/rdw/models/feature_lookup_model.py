@@ -3,6 +3,7 @@
 from datetime import datetime
 
 import mlflow
+import pandas as pd
 from databricks import feature_engineering
 from databricks.feature_engineering import FeatureFunction, FeatureLookup
 from databricks.sdk import WorkspaceClient
@@ -10,16 +11,12 @@ from loguru import logger
 from mlflow.models import infer_signature
 from mlflow.tracking import MlflowClient
 from pyspark.sql import DataFrame, SparkSession
-from pyspark.sql import functions as F
 from sklearn.compose import ColumnTransformer
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, log_loss
+from sklearn.metrics import log_loss, mean_absolute_error, mean_squared_error, r2_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 from sksurv.metrics import concordance_index_censored
 from xgboost import XGBClassifier
-from pyspark.sql.types import IntegerType # Import IntegerType for casting
-import pandas as pd
-
 
 from rdw.config import ProjectConfig, Tags
 
@@ -37,7 +34,11 @@ class FeatureLookUpModel:
         # Extract settings from the config
         self.num_features = self.config.num_features
         self.cat_features = self.config.cat_features
-        self.lookup_features = ["aantal_cilinders", "aantal_deuren", "nettomaximumvermogen"]  # Hardcoded - selected at random
+        self.lookup_features = [
+            "aantal_cilinders",
+            "aantal_deuren",
+            "nettomaximumvermogen",
+        ]  # Hardcoded - selected at random
         self.target = self.config.target
         self.parameters = self.config.parameters
         self.catalog_name = self.config.catalog_name
@@ -83,16 +84,16 @@ class FeatureLookUpModel:
         $$
         from datetime import datetime
         timestamp_in_seconds = datum_eerste_toelating / 1000000000.0
-        
+
         registration_datetime = datetime.fromtimestamp(timestamp_in_seconds)
         reg_year = registration_datetime.year
-        
+
         current_year = datetime.now().year
         age = current_year - reg_year
-        
+
         if age < 0:
             return 0
-        
+
         return age
         $$
         """)
@@ -118,7 +119,6 @@ class FeatureLookUpModel:
 
         Creates a training set using FeatureLookup and FeatureFunction.
         """
-
         self.training_set = self.fe.create_training_set(
             df=self.train_set,
             label=self.target,
@@ -180,13 +180,14 @@ class FeatureLookUpModel:
             self.run_id = run.info.run_id
             self.pipeline.fit(self.X_train.drop(columns=["days_alive"]), self.y_train)
 
-            
             # Preds for C-index computation
             y_proba = self.pipeline.predict_proba(self.X_test.drop(columns=["days_alive"]))[:, 1]
             event_indicator = self.y_test.astype(bool)
-            event_time = self.X_test["car_age_yrs"] # car_age_yrs or days_alive ? it would make more sense to use the newly engineered col.
+            event_time = self.X_test[
+                "car_age_yrs"
+            ]  # car_age_yrs or days_alive ? it would make more sense to use the newly engineered col.
             risk_scores = y_proba  # probability of death = risk
-            
+
             # Preds
             y_pred = self.pipeline.predict(self.X_test.drop(columns=["days_alive"]))
 
@@ -194,7 +195,7 @@ class FeatureLookUpModel:
             mse = mean_squared_error(self.y_test, y_pred)
             mae = mean_absolute_error(self.y_test, y_pred)
             r2 = r2_score(self.y_test, y_pred)
-            ll = log_loss(self.y_test, y_pred) # added
+            ll = log_loss(self.y_test, y_pred)  # added
             c_index = concordance_index_censored(event_indicator, event_time, risk_scores)[0]
 
             logger.info(f"📊 Mean Squared Error: {mse}")

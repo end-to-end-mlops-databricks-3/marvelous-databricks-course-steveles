@@ -11,10 +11,11 @@
 
 # COMMAND ----------
 
-# fix the system path. 
-from pathlib import Path
+# fix the system path.
 import sys
-sys.path.append(str(Path.cwd().parent / 'src'))
+from pathlib import Path
+
+sys.path.append(str(Path.cwd().parent / "src"))
 
 # COMMAND ----------
 
@@ -34,7 +35,7 @@ spark = SparkSession.builder.getOrCreate()
 tags_dict = {"git_sha": "abcd12345", "branch": "feature/fe_model"}
 tags = Tags(**tags_dict)
 
-config = ProjectConfig.from_yaml(config_path="../project_config.yml") # run in DB
+config = ProjectConfig.from_yaml(config_path="../project_config.yml")  # run in DB
 
 
 # COMMAND ----------

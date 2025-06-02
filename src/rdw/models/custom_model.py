@@ -14,8 +14,6 @@ from typing import Literal
 import mlflow
 import numpy as np
 import pandas as pd
-
-from xgboost import XGBClassifier
 from loguru import logger
 from mlflow import MlflowClient
 from mlflow.data.dataset_source import DatasetSource
@@ -23,14 +21,14 @@ from mlflow.models import infer_signature
 from mlflow.utils.environment import _mlflow_conda_env
 from pyspark.sql import SparkSession
 from sklearn.compose import ColumnTransformer
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, log_loss
+from sklearn.metrics import log_loss, mean_absolute_error, mean_squared_error, r2_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 from sksurv.metrics import concordance_index_censored
+from xgboost import XGBClassifier
 
 from rdw.config import ProjectConfig, Tags
-from rdw.utils import adjust_predictions, c_statistic_harrell
-from rdw.__init__ import __version__
+from rdw.utils import adjust_predictions
 
 
 class RDWModelWrapper(mlflow.pyfunc.PythonModel):
@@ -103,13 +101,9 @@ class CustomModel:
         This method loads data from Databricks tables and splits it into features and target variables.
         """
         logger.info("🔄 Loading data from Databricks tables...")
-        self.train_set_spark = self.spark.table(
-            f"{self.catalog_name}.{self.schema_name}.train_set"
-        )
+        self.train_set_spark = self.spark.table(f"{self.catalog_name}.{self.schema_name}.train_set")
         self.train_set = self.train_set_spark.toPandas()
-        self.test_set = self.spark.table(
-            f"{self.catalog_name}.{self.schema_name}.test_set"
-        ).toPandas()
+        self.test_set = self.spark.table(f"{self.catalog_name}.{self.schema_name}.test_set").toPandas()
 
         self.data_version = "0"  # describe history -> retrieve
 
@@ -127,9 +121,7 @@ class CustomModel:
         """
         logger.info("🔄 Defining preprocessing pipeline...")
         self.preprocessor = ColumnTransformer(
-            transformers=[
-                ("cat", OneHotEncoder(handle_unknown="ignore"), self.cat_features)
-            ],
+            transformers=[("cat", OneHotEncoder(handle_unknown="ignore"), self.cat_features)],
             remainder="passthrough",
         )
 
@@ -151,11 +143,11 @@ class CustomModel:
     def train(self) -> None:
         """Train the model using the prepared pipeline."""
         logger.info("🚀 Starting training...")
-        self.pipeline.fit(self.X_train.drop(columns=["days_alive"]), self.y_train) # we drop this col since it will contaminate the model.
+        self.pipeline.fit(
+            self.X_train.drop(columns=["days_alive"]), self.y_train
+        )  # we drop this col since it will contaminate the model.
 
-    def log_model(
-        self, dataset_type: Literal["PandasDataset", "SparkDataset"] = "SparkDataset"
-    ) -> None:
+    def log_model(self, dataset_type: Literal["PandasDataset", "SparkDataset"] = "SparkDataset") -> None:
         """Log the trained model and its metrics to MLflow.
 
         This method evaluates the model, logs parameters and metrics, and saves the model in MLflow.
@@ -183,7 +175,7 @@ class CustomModel:
             mse = mean_squared_error(self.y_test, y_pred)
             mae = mean_absolute_error(self.y_test, y_pred)
             r2 = r2_score(self.y_test, y_pred)
-            ll = log_loss(self.y_test, y_pred) # added
+            ll = log_loss(self.y_test, y_pred)  # added
             c_index = concordance_index_censored(event_indicator, event_time, risk_scores)[0]
 
             logger.info(f"📊 Mean Squared Error: {mse}")
