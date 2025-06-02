@@ -1,9 +1,20 @@
 # Databricks notebook source
-# MAGIC %pip install house_price-1.0.1-py3-none-any.whl
+# MAGIC %pip install mlops_course-0.0.1-py3-none-any.whl
+
+# COMMAND ----------
+
+# MAGIC %pip install -e ..
 
 # COMMAND ----------
 
 # MAGIC %restart_python
+
+# COMMAND ----------
+
+# fix the system path. 
+from pathlib import Path
+import sys
+sys.path.append(str(Path.cwd().parent / 'src'))
 
 # COMMAND ----------
 
@@ -16,8 +27,8 @@ from rdw.config import ProjectConfig, Tags
 from rdw.models.feature_lookup_model import FeatureLookUpModel
 
 # Configure tracking uri
-# mlflow.set_tracking_uri("databricks")
-# mlflow.set_registry_uri("databricks-uc")
+mlflow.set_tracking_uri("databricks")
+mlflow.set_registry_uri("databricks-uc")
 
 spark = SparkSession.builder.getOrCreate()
 tags_dict = {"git_sha": "abcd12345", "branch": "feature/fe_model"}
@@ -58,7 +69,7 @@ fe_model.train()
 
 # COMMAND ----------
 
-# Train the model
+# register the model
 fe_model.register_model()
 
 # COMMAND ----------
@@ -76,13 +87,13 @@ X_test = test_set.drop("aantal_cilinders", "aantal_deuren", "nettomaximumvermoge
 # COMMAND ----------
 
 
-from pyspark.sql.functions import col
+# from pyspark.sql.functions import col
 
-X_test = X_test.withColumn("LotArea", col("LotArea").cast("int")) \
-       .withColumn("OverallCond", col("OverallCond").cast("int")) \
-       .withColumn("YearBuilt", col("YearBuilt").cast("int")) \
-       .withColumn("YearRemodAdd", col("YearRemodAdd").cast("int")) \
-       .withColumn("TotalBsmtSF", col("TotalBsmtSF").cast("int"))
+# X_test = X_test.withColumn("LotArea", col("LotArea").cast("int")) \
+#        .withColumn("OverallCond", col("OverallCond").cast("int")) \
+#        .withColumn("YearBuilt", col("YearBuilt").cast("int")) \
+#        .withColumn("YearRemodAdd", col("YearRemodAdd").cast("int")) \
+#        .withColumn("TotalBsmtSF", col("TotalBsmtSF").cast("int"))
 
 
 # COMMAND ----------
@@ -94,5 +105,3 @@ predictions = fe_model.load_latest_model_and_predict(X_test)
 
 # Display predictions
 logger.info(predictions)
-
-# COMMAND ----------

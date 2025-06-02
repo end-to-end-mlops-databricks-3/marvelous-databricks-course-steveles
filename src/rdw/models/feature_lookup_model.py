@@ -18,6 +18,7 @@ from sklearn.preprocessing import OneHotEncoder
 from sksurv.metrics import concordance_index_censored
 from xgboost import XGBClassifier
 from pyspark.sql.types import IntegerType # Import IntegerType for casting
+import pandas as pd
 
 
 from rdw.config import ProjectConfig, Tags
@@ -76,20 +77,26 @@ class FeatureLookUpModel:
         This function subtracts the year built from the current year.
         """
         self.spark.sql(f"""
-        CREATE OR REPLACE FUNCTION {self.function_name}(datum_eerste_toelating INT)
+        CREATE OR REPLACE FUNCTION {self.function_name}(datum_eerste_toelating BIGINT)
         RETURNS INT
         LANGUAGE PYTHON AS
         $$
         from datetime import datetime
-        from pyspark.sql.functions import year
-
-        reg_year = datetime.fromtimestamp(datum_eerste_toelating).year
+        timestamp_in_seconds = datum_eerste_toelating / 1000000000.0
+        
+        registration_datetime = datetime.fromtimestamp(timestamp_in_seconds)
+        reg_year = registration_datetime.year
+        
         current_year = datetime.now().year
         age = current_year - reg_year
+        
+        if age < 0:
+            return 0
         
         return age
         $$
         """)
+
         logger.info("✅ Feature function defined.")
 
     def load_data(self) -> None:
@@ -111,7 +118,6 @@ class FeatureLookUpModel:
 
         Creates a training set using FeatureLookup and FeatureFunction.
         """
-        self.train_set["datum_eerste_toelating"] = self.train_set["datum_eerste_toelating"].astype(IntegerType())
 
         self.training_set = self.fe.create_training_set(
             df=self.train_set,
@@ -133,7 +139,9 @@ class FeatureLookUpModel:
 
         self.training_df = self.training_set.load_df().toPandas()
         current_year = datetime.now().year
-        self.test_set["car_age_yrs"] = current_year - F.year(self.test_set["datum_eerste_toelating"])
+
+        # This seems to fix previous errors
+        self.test_set["car_age_yrs"] = current_year - pd.to_datetime(self.test_set["datum_eerste_toelating"]).dt.year
 
         self.X_train = self.training_df[self.num_features + self.cat_features + ["car_age_yrs"]]
         self.y_train = self.training_df[self.target]
@@ -153,7 +161,7 @@ class FeatureLookUpModel:
             transformers=[("cat", OneHotEncoder(handle_unknown="ignore"), self.cat_features)], remainder="passthrough"
         )
 
-        pipeline = Pipeline(
+        self.pipeline = Pipeline(
             steps=[
                 ("preprocessor", preprocessor),
                 (
@@ -170,11 +178,13 @@ class FeatureLookUpModel:
 
         with mlflow.start_run(tags=self.tags) as run:
             self.run_id = run.info.run_id
+            self.pipeline.fit(self.X_train.drop(columns=["days_alive"]), self.y_train)
+
             
             # Preds for C-index computation
             y_proba = self.pipeline.predict_proba(self.X_test.drop(columns=["days_alive"]))[:, 1]
             event_indicator = self.y_test.astype(bool)
-            event_time = self.X_test["days_alive"]
+            event_time = self.X_test["car_age_yrs"] # car_age_yrs or days_alive ? it would make more sense to use the newly engineered col.
             risk_scores = y_proba  # probability of death = risk
             
             # Preds
@@ -204,7 +214,7 @@ class FeatureLookUpModel:
             signature = infer_signature(self.X_train, y_pred)
 
             self.fe.log_model(
-                model=pipeline,
+                model=self.pipeline,
                 flavor=mlflow.sklearn,
                 artifact_path="xgb-pipeline-model-fe",
                 training_set=self.training_set,
