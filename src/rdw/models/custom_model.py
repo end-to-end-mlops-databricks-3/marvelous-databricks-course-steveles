@@ -14,6 +14,7 @@ from typing import Literal
 import mlflow
 import numpy as np
 import pandas as pd
+
 from xgboost import XGBClassifier
 from loguru import logger
 from mlflow import MlflowClient
@@ -109,6 +110,7 @@ class CustomModel:
         self.test_set = self.spark.table(
             f"{self.catalog_name}.{self.schema_name}.test_set"
         ).toPandas()
+
         self.data_version = "0"  # describe history -> retrieve
 
         self.X_train = self.train_set[self.num_features + self.cat_features]
@@ -160,21 +162,20 @@ class CustomModel:
         """
         mlflow.set_experiment(self.experiment_name)
         additional_pip_deps = ["pyspark==3.5.0"]
-        for (
-            package
-        ) in self.code_paths:  # e.g., ["../dist/house_price-1.0.1-py3-none-any.whl"]
+
+        for package in self.code_paths:  # e.g., ["../dist/house_price-1.0.1-py3-none-any.whl"]
             whl_name = package.split("/")[-1]
             additional_pip_deps.append(f"./code/{whl_name}")
 
         with mlflow.start_run(tags=self.tags) as run:
             self.run_id = run.info.run_id
-            
+
             # Preds for C-index computation
             y_proba = self.pipeline.predict_proba(self.X_test.drop(columns=["days_alive"]))[:, 1]
             event_indicator = self.y_test.astype(bool)
             event_time = self.X_test["days_alive"]
             risk_scores = y_proba  # probability of death = risk
-            
+
             # Preds
             y_pred = self.pipeline.predict(self.X_test.drop(columns=["days_alive"]))
 
@@ -199,7 +200,6 @@ class CustomModel:
             mlflow.log_metric("r2_score", r2)
             mlflow.log_metric("log_loss", ll)
             mlflow.log_metric("harrell_c_stat", c_index)
-            
 
             # Log the model
             signature = infer_signature(
