@@ -17,6 +17,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 from sksurv.metrics import concordance_index_censored
 from xgboost import XGBClassifier
+from pyspark.sql.types import IntegerType # Import IntegerType for casting
+
 
 from rdw.config import ProjectConfig, Tags
 
@@ -80,7 +82,12 @@ class FeatureLookUpModel:
         $$
         from datetime import datetime
         from pyspark.sql.functions import year
-        return datetime.now().year - year(datum_eerste_toelating)
+
+        reg_year = datetime.fromtimestamp(datum_eerste_toelating).year
+        current_year = datetime.now().year
+        age = current_year - reg_year
+        
+        return age
         $$
         """)
         logger.info("✅ Feature function defined.")
@@ -104,6 +111,8 @@ class FeatureLookUpModel:
 
         Creates a training set using FeatureLookup and FeatureFunction.
         """
+        self.train_set["datum_eerste_toelating"] = self.train_set["datum_eerste_toelating"].astype(IntegerType())
+
         self.training_set = self.fe.create_training_set(
             df=self.train_set,
             label=self.target,
