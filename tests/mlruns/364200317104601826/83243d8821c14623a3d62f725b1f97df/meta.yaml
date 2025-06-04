@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/steven/Documents/Python Projects/marvelous-databricks-course-steveles/tests/mlruns/364200317104601826/83243d8821c14623a3d62f725b1f97df/artifacts
+end_time: 1748600993341
+entry_point_name: ''
+experiment_id: '364200317104601826'
+lifecycle_stage: active
+run_id: 83243d8821c14623a3d62f725b1f97df
+run_name: delicate-turtle-630
+run_uuid: 83243d8821c14623a3d62f725b1f97df
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1748600990758
+status: 3
+tags: []
+user_id: steven

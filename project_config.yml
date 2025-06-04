@@ -11,7 +11,7 @@ dev:
 parameters:
   learning_rate: 0.01
   n_estimators: 1000
-  max_depth: 6
+  max_depth: 10 # changed from 6
 
 
 num_features:
