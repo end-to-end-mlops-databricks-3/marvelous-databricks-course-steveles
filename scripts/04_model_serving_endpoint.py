@@ -44,7 +44,7 @@ model_serving.deploy_or_update_serving_endpoint()
 # COMMAND ----------
 # Create a sample request body
 required_columns = [
-    "teken",
+    "kenteken",
     "voertuigsoort",
     "merk",
     "handelsbenaming",
