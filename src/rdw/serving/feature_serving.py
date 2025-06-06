@@ -6,6 +6,7 @@ from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.catalog import (
     OnlineTableSpec,
     OnlineTableSpecTriggeredSchedulingPolicy,
+    OnlineTable
 )
 from databricks.sdk.service.serving import EndpointCoreConfigInput, ServedEntityInput
 
@@ -37,7 +38,11 @@ class FeatureServing:
             ),  # Sets the policy to update the online table when triggered (not on a schedule)
             perform_full_copy=False,  # Performs incremental updates instead of full snapshot
         )
-        self.workspace.online_tables.create(name=self.online_table_name, spec=spec)
+        online_table = OnlineTable(
+            name=self.online_table_name,
+            spec=spec
+        )
+        self.workspace.online_tables.create(online_table)
 
     def create_feature_spec(self) -> None:
         """Create a feature spec to enable feature serving."""
@@ -46,7 +51,7 @@ class FeatureServing:
             FeatureLookup(
                 table_name=self.feature_table_name,
                 lookup_key="kenteken",
-                feature_names=["kenteken", "merk", "handelsbenaming"],
+                feature_names=["merk", "handelsbenaming", "eerste_kleur"],
             )
         ]
         self.fe.create_feature_spec(name=self.feature_spec_name, features=features, exclude_columns=None)

@@ -1,10 +1,22 @@
 # Databricks notebook source
-# MAGIC %pip install house_price-1.0.1-py3-none-any.whl
+# MAGIC %pip install databricks-feature-engineering
+# MAGIC %pip install --upgrade databricks-sdk
+# MAGIC %pip install scikit-learn==1.6.1
+# MAGIC %pip install lightgbm==4.5.0
 
 # COMMAND ----------
+
 # MAGIC %restart_python
 
 # COMMAND ----------
+
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path.cwd().parent / "src"))
+
+# COMMAND ----------
+
 import os
 import time
 
@@ -22,6 +34,7 @@ from rdw.serving.feature_serving import FeatureServing
 config = ProjectConfig.from_yaml(config_path="../project_config.yml")
 
 # COMMAND ----------
+
 spark = SparkSession.builder.getOrCreate()
 dbutils = DBUtils(spark)
 
@@ -29,6 +42,7 @@ fe = feature_engineering.FeatureEngineeringClient()
 mlflow.set_registry_uri("databricks-uc")
 
 # COMMAND ----------
+
 # get environment variables
 os.environ["DBR_TOKEN"] = dbutils.notebook.entry_point.getDbutils().notebook().getContext().apiToken().get()
 os.environ["DBR_HOST"] = spark.conf.get("spark.databricks.workspaceUrl")
@@ -50,12 +64,12 @@ df = pd.concat([train_set, test_set])
 model = mlflow.sklearn.load_model(f"models:/{catalog_name}.{schema_name}.rdw_model_basic@latest-model")
 
 
-preds_df = df[["Id", "GrLivArea", "YearBuilt"]]
-preds_df["Predicted_SalePrice"] = model.predict(df[config.cat_features + config.num_features])
+preds_df = df[["kenteken", "merk", "handelsbenaming", "eerste_kleur"]]
+preds_df["is_dead"] = model.predict(df[config.cat_features + config.num_features])
 preds_df = spark.createDataFrame(preds_df)
 
 fe.create_table(
-    name=feature_table_name, primary_keys=["Id"], df=preds_df, description="House Prices predictions feature table"
+    name=feature_table_name, primary_keys=["kenteken"], df=preds_df, description="RDW predictions feature table"
 )
 
 spark.sql(f"""
@@ -70,14 +84,17 @@ feature_serving = FeatureServing(
 
 
 # COMMAND ----------
+
 # Create online table
 feature_serving.create_online_table()
 
 # COMMAND ----------
+
 # Create feature spec
 feature_serving.create_feature_spec()
 
 # COMMAND ----------
+
 # Deploy feature serving endpoint
 feature_serving.deploy_or_update_serving_endpoint()
 
@@ -100,6 +117,7 @@ print("Execution time:", execution_time, "seconds")
 
 
 # COMMAND ----------
+
 # another way to call the endpoint
 
 response = requests.post(

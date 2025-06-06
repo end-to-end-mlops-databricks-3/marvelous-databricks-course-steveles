@@ -2,9 +2,15 @@
 # MAGIC %pip install house_price-1.0.1-py3-none-any.whl
 
 # COMMAND ----------
+
 # MAGIC %restart_python
 
 # COMMAND ----------
+
+
+
+# COMMAND ----------
+
 import os
 import time
 from typing import Dict, List
@@ -31,17 +37,20 @@ catalog_name = config.catalog_name
 schema_name = config.schema_name
 
 # COMMAND ----------
+
 # Initialize feature store manager
 model_serving = ModelServing(
     model_name=f"{catalog_name}.{schema_name}.rdw_model_basic", endpoint_name="rdw-model-serving"
 )
 
 # COMMAND ----------
+
 # Deploy the model serving endpoint
 model_serving.deploy_or_update_serving_endpoint()
 
 
 # COMMAND ----------
+
 # Create a sample request body
 required_columns = [
     "kenteken",
@@ -80,6 +89,7 @@ sampled_records = test_set[required_columns].sample(n=100, replace=True).to_dict
 dataframe_records = [[record] for record in sampled_records]
 
 # COMMAND ----------
+
 # Call the endpoint with one sample record
 
 """
@@ -119,6 +129,7 @@ print(f"Response Status: {status_code}")
 print(f"Response Text: {response_text}")
 
 # COMMAND ----------
+
 # Load test
 for i in range(len(dataframe_records)):
     status_code, response_text = call_endpoint(dataframe_records[i])
