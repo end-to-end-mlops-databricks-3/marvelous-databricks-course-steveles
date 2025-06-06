@@ -7,7 +7,6 @@
 # COMMAND ----------
 import os
 import time
-from typing import Dict, List
 
 import requests
 from loguru import logger
@@ -75,7 +74,7 @@ required_columns = [
     "days_alive",
     "nettomaximumvermogen",
     "vervaldatum_apk",
-    "datum_eerste_toelating"
+    "datum_eerste_toelating",
 ]
 
 spark = SparkSession.builder.getOrCreate()
@@ -90,10 +89,8 @@ logger.info(dataframe_records[0])
 
 # COMMAND ----------
 # Call the endpoint with one sample record
-def call_endpoint(record):
-    """
-    Calls the model serving endpoint with a given input record.
-    """
+def call_endpoint(record: any) -> tuple[int, str]:
+    """Call the model serving endpoint with a given input record."""
     serving_endpoint = f"https://{os.environ['DBR_HOST']}/serving-endpoints/{endpoint_name}/invocations"
 
     response = requests.post(

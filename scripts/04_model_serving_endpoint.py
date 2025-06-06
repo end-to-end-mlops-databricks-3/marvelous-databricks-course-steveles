@@ -8,12 +8,10 @@
 # COMMAND ----------
 
 
-
 # COMMAND ----------
 
 import os
 import time
-from typing import Dict, List
 
 import requests
 from pyspark.dbutils import DBUtils
@@ -32,7 +30,7 @@ os.environ["DBR_TOKEN"] = dbutils.notebook.entry_point.getDbutils().notebook().g
 os.environ["DBR_HOST"] = spark.conf.get("spark.databricks.workspaceUrl")
 
 # Load project config
-config = ProjectConfig.from_yaml(config_path="./project_config.yml") # .. in DB
+config = ProjectConfig.from_yaml(config_path="./project_config.yml")  # .. in DB
 catalog_name = config.catalog_name
 schema_name = config.schema_name
 
@@ -77,7 +75,7 @@ required_columns = [
     "days_alive",
     "nettomaximumvermogen",
     "vervaldatum_apk",
-    "datum_eerste_toelating"
+    "datum_eerste_toelating",
 ]
 
 
@@ -92,28 +90,27 @@ dataframe_records = [[record] for record in sampled_records]
 
 # Call the endpoint with one sample record
 
-"""
-Each dataframe record in the request body should be list of json with columns looking like:
+# """
+# Each dataframe record in the request body should be list of json with columns looking like:
 
-[{'LotFrontage': 78.0,
-  'LotArea': 9317,
-  'OverallQual': 6,
-  'OverallCond': 5,
-  'YearBuilt': 2006,
-  'Exterior1st': 'VinylSd',
-  'Exterior2nd': 'VinylSd',
-  'MasVnrType': 'None',
-  'Foundation': 'PConc',
-  'Heating': 'GasA',
-  'CentralAir': 'Y',
-  'SaleType': 'WD',
-  'SaleCondition': 'Normal'}]
-"""
+# [{'LotFrontage': 78.0,
+#   'LotArea': 9317,
+#   'OverallQual': 6,
+#   'OverallCond': 5,
+#   'YearBuilt': 2006,
+#   'Exterior1st': 'VinylSd',
+#   'Exterior2nd': 'VinylSd',
+#   'MasVnrType': 'None',
+#   'Foundation': 'PConc',
+#   'Heating': 'GasA',
+#   'CentralAir': 'Y',
+#   'SaleType': 'WD',
+#   'SaleCondition': 'Normal'}]
+# """
 
-def call_endpoint(record):
-    """
-    Calls the model serving endpoint with a given input record.
-    """
+
+def call_endpoint(record: any) -> tuple[int, str]:
+    """Call the model serving endpoint with a given input record."""
     serving_endpoint = f"https://{os.environ['DBR_HOST']}/serving-endpoints/rdw-model-serving/invocations"
 
     response = requests.post(
