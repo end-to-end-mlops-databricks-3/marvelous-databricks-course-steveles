@@ -48,9 +48,9 @@ resources:
         timezone_id: "Europe/Amsterdam"
         pause_status: ${var.schedule_pause_status}
       tags:
-        project_name: "house-price"
+        project_name: "rdw"
       job_clusters:
-        - job_cluster_key: "house-price-cluster"
+        - job_cluster_key: "rdw-cluster"
           new_cluster:
             spark_version: "15.4.x-scala2.12"
             data_security_mode: "SINGLE_USER"
@@ -60,11 +60,11 @@ resources:
               min_workers: 1
               max_workers: 1
             spark_env_vars:
-              "TOKEN_STATUS_CHECK": "{{secrets/mlops_course/git_token_status_check}}"
+              "TOKEN_STATUS_CHECK": "{{secrets/rdw/git_token_status_check}}"
 
       tasks:
         - task_key: "preprocessing"
-          job_cluster_key: "house-price-cluster"
+          job_cluster_key: "rdw-cluster"
           spark_python_task:
             python_file: "scripts/01.process_data.py"
             parameters:
@@ -79,7 +79,7 @@ resources:
            - whl: ./dist/*.whl
            - whl: /Volumes/mlops_prd/utils/package/marvelous-${var.marvelous_version}-py3-none-any.whl
         - task_key: "train_model"
-          job_cluster_key: "house-price-cluster"
+          job_cluster_key: "rdw-cluster"
           depends_on:
             - task_key: "preprocessing"
           spark_python_task:
@@ -112,7 +112,7 @@ resources:
           depends_on:
             - task_key: "model_updated"
               outcome: "true"
-          job_cluster_key: "house-price-cluster"
+          job_cluster_key: "rdw-cluster"
           spark_python_task:
             python_file: "scripts/03.deploy_model.py"
             parameters:
@@ -137,7 +137,7 @@ resources:
           depends_on:
             - task_key: "post_commit_status_required"
               outcome: "true"
-          job_cluster_key: "house-price-cluster"
+          job_cluster_key: "rdw-cluster"
           spark_python_task:
             python_file: "scripts/04.post_commit_status.py"
             parameters:
