@@ -30,7 +30,7 @@ class FeatureServing:
     def create_online_table(self) -> None:
         """Create an online table based on the feature table."""
         spec = OnlineTableSpec(
-            primary_key_columns=["Id"],  # Feature lookup key
+            primary_key_columns=["kenteken"],  # Feature lookup key
             source_table_full_name=self.feature_table_name,
             run_triggered=OnlineTableSpecTriggeredSchedulingPolicy.from_dict(
                 {"triggered": "true"}
@@ -45,8 +45,8 @@ class FeatureServing:
         features = [
             FeatureLookup(
                 table_name=self.feature_table_name,
-                lookup_key="Id",
-                feature_names=["GrLivArea", "YearBuilt", "Predicted_SalePrice"],
+                lookup_key="kenteken",
+                feature_names=["kenteken", "merk", "handelsbenaming"],
             )
         ]
         self.fe.create_feature_spec(name=self.feature_spec_name, features=features, exclude_columns=None)
