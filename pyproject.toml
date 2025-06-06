@@ -10,7 +10,9 @@ dependencies = ["mlflow==2.17.0",
                 "pandas==2.2.3",
                 "psutil==6.0.0",
                 "pyarrow==14.0.1",
-                "scikit-learn==1.5.2",
+                "scikit-learn==1.6.1", # standard 1.5.2, 1.6.1 for using scikit-survival
+                "xgboost==3.0.1", # added for custom model
+                "scikit-survival==0.24.1", # survival analysis
                 "lightgbm==4.5.0",
                 "scipy==1.14.1",
                 "databricks-feature-engineering==0.6",
@@ -46,7 +48,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where =["src"]
-include = ["house_price*"]
+include = ["rdw*"]
 
 
 [tool.setuptools.dynamic]
