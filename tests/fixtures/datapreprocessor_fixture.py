@@ -57,6 +57,7 @@ def sample_data(config: ProjectConfig, spark_session: SparkSession) -> pd.DataFr
     """
     file_path = PROJECT_DIR / "tests" / "test_data" / "sample.csv"
     sample = pd.read_csv(file_path.as_posix(), sep=",", engine="python", on_bad_lines="skip")
+
     # Alternative approach to reading the sample
     # Important Note: Replace NaN with None in Pandas Before Conversion to Spark DataFrame:
     # sample = sample.where(sample.notna(), None)  # noqa
