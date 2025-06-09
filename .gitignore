@@ -52,7 +52,7 @@ coverage.xml
 *.cover
 .hypothesis/
 .pytest_cache/
-tests/mlruns
+**/mlruns/
 
 # PyBuilder
 target/
