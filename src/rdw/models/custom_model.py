@@ -5,7 +5,7 @@ infer_signature (from mlflow.models) → Captures input-output schema for model 
 num_features → List of numerical feature names.
 cat_features → List of categorical feature names.
 target → The column to predict.
-parameters → Hyperparameters for LightGBM.
+parameters → Hyperparameters for XGBoost.
 catalog_name, schema_name → Database schema names for Databricks tables.
 """
 
@@ -34,7 +34,7 @@ from rdw.utils import adjust_predictions
 class RDWModelWrapper(mlflow.pyfunc.PythonModel):
     """Wrapper class for machine learning models to be used with MLflow.
 
-    This class wraps a machine learning model for predicting survival
+    This class wraps a machine learning model for predicting survival.
     """
 
     def __init__(self, model: object) -> None:
@@ -104,6 +104,7 @@ class CustomModel:
         self.train_set_spark = self.spark.table(f"{self.catalog_name}.{self.schema_name}.train_set")
         self.train_set = self.train_set_spark.toPandas()
         self.test_set = self.spark.table(f"{self.catalog_name}.{self.schema_name}.test_set").toPandas()
+
         self.data_version = "0"  # describe history -> retrieve
 
         self.X_train = self.train_set[self.num_features + self.cat_features]
@@ -153,6 +154,7 @@ class CustomModel:
         """
         mlflow.set_experiment(self.experiment_name)
         additional_pip_deps = ["pyspark==3.5.0"]
+
         for package in self.code_paths:  # e.g., ["../dist/house_price-1.0.1-py3-none-any.whl"]
             whl_name = package.split("/")[-1]
             additional_pip_deps.append(f"./code/{whl_name}")
