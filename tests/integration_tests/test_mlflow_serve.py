@@ -36,7 +36,7 @@ test_data = {
     "nettomaximumvermogen": 235.0,
     "vervaldatum_apk": 1740355200000000000,
     "datum_eerste_toelating": 1614124800000000000,
-    "is_dead": 1
+    "is_dead": 1,
 }
 
 pandas_df = pd.DataFrame([test_data])
