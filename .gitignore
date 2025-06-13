@@ -52,6 +52,7 @@ coverage.xml
 *.cover
 .hypothesis/
 .pytest_cache/
+**/mlruns/
 
 # PyBuilder
 target/
@@ -97,3 +98,5 @@ dmypy.json
 .history
 
 .databricks
+test-reports/report.xml
+mlruns/0/meta.yaml
