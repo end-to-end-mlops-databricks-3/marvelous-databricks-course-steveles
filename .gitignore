@@ -98,3 +98,5 @@ dmypy.json
 .history
 
 .databricks
+test-reports/report.xml
+mlruns/0/meta.yaml
