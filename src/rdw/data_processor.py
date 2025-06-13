@@ -1,5 +1,8 @@
 """Data preprocessing module."""
 
+import time
+
+import numpy as np
 import pandas as pd
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import current_timestamp, to_utc_timestamp
@@ -96,3 +99,89 @@ class DataProcessor:
             f"ALTER TABLE {self.config.catalog_name}.{self.config.schema_name}.test_set "
             "SET TBLPROPERTIES (delta.enableChangeDataFeed = true);"
         )
+
+
+def generate_synthetic_data(df: pd.DataFrame, drift: bool = False, num_rows: int = 500) -> pd.DataFrame:
+    """Generate synthetic vehicle dataset based on statistical distribution of input DataFrame.
+
+    Supports optional data drift injection for experimentation or model testing.
+
+    :param df: Source vehicle DataFrame
+    :param drift: Inject artificial drift into select features
+    :param num_rows: Number of synthetic records to generate
+    :return: Synthetic DataFrame
+    """
+    synthetic_data = pd.DataFrame()
+
+    for column in df.columns:
+        if column == "kenteken":
+            continue
+
+        if pd.api.types.is_numeric_dtype(df[column]):
+            synthetic_data[column] = np.random.normal(df[column].mean(), df[column].std(), num_rows)
+
+            # Clamp values to be non-negative where needed
+            if column in {
+                "aantal_zitplaatsen",
+                "aantal_cilinders",
+                "cilinderinhoud",
+                "massa_ledig_voertuig",
+                "massa_rijklaar",
+                "catalogusprijs",
+                "aantal_deuren",
+                "aantal_wielen",
+                "lengte",
+                "breedte",
+                "vermogen_massarijklaar",
+                "wielbasis",
+                "days_alive",
+                "nettomaximumvermogen",
+            }:
+                synthetic_data[column] = np.maximum(0, synthetic_data[column])
+
+        elif pd.api.types.is_object_dtype(df[column]):
+            synthetic_data[column] = np.random.choice(
+                df[column].dropna().unique(), num_rows, p=df[column].value_counts(normalize=True)
+            )
+
+        elif pd.api.types.is_datetime64_any_dtype(df[column]) or "datum" in column.lower():
+            try:
+                parsed_dates = pd.to_datetime(df[column], errors="coerce").dropna()
+                if not parsed_dates.empty:
+                    min_date = parsed_dates.min()
+                    max_date = parsed_dates.max()
+                    synthetic_data[column] = pd.to_datetime(np.random.randint(min_date.value, max_date.value, num_rows))
+                else:
+                    synthetic_data[column] = pd.NaT
+            except Exception:
+                synthetic_data[column] = pd.NaT
+
+        else:
+            synthetic_data[column] = np.random.choice(df[column], num_rows)
+
+    # Cast back to appropriate int types for specific columns if needed
+    int_columns = ["massa_ledig_voertuig", "aantal_wielen", "days_alive", "is_dead"]
+    for col in int_columns:
+        if col in synthetic_data.columns:
+            synthetic_data[col] = synthetic_data[col].astype(int)
+
+    timestamp_base = int(time.time() * 1000)
+    synthetic_data["synthetic_id"] = [str(timestamp_base + i) for i in range(num_rows)]
+
+    # Drift injection
+    if drift:
+        drift_features = ["massa_rijklaar", "vermogen_massarijklaar"]
+        for feature in drift_features:
+            if feature in synthetic_data.columns:
+                synthetic_data[feature] *= 1.5  # inflate
+
+        if "vervaldatum_apk" in synthetic_data.columns:
+            future_dates = pd.date_range(start=pd.Timestamp.now(), periods=num_rows, freq="D")
+            synthetic_data["vervaldatum_apk"] = np.random.choice(future_dates, num_rows)
+
+    return synthetic_data
+
+
+def generate_test_data(df: pd.DataFrame, drift: bool = False, num_rows: int = 100) -> pd.DataFrame:
+    """Generate test data matching input DataFrame distributions with optional drift."""
+    return generate_synthetic_data(df, drift, num_rows)
